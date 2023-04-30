@@ -1,30 +1,43 @@
-import react, {useEffect, useRef} from 'react'
+import {useState} from 'react'
 import usdcLogo from '../Assets/USDC Coin.png'
 import {useStore} from "../Store/store";
-import {logDOM} from "@testing-library/react";
+import {ethers} from "ethers";
+import axios from "axios";
+import {CopyIcon} from '../Assets/SVG'
 
 function Hero(){
     const walletAddress = useStore((state)=> state.userWallet)
-    const hasUSDC = useStore((state)=>state.hasUSDC)
-    const initialMount = useRef(true);
+    const [coupon, setCoupon] = useState(null);
 
-    async function checkUSDC(){
 
+    async function checkUSDC(walletAddress){
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const usdcContractAddress = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
+        const usdcABI = require('../Assets/abi_USDC.json')
+        const usdcContract = new ethers.Contract(usdcContractAddress, usdcABI, provider)
+        const userBalance = await usdcContract.balanceOf(walletAddress);
+        console.log(userBalance.toString())
+
+        if (userBalance > 0) {
+            const response = await axios.post("http://127.0.0.1:5000/api/verify", {"walletAddress": walletAddress})
+            const coupon = response.data.coupon_code
+            setCoupon(coupon)
+        }
+        else{
+            alert("You have no USDC!")
+        }
+    }
+    function copyCouponToClipboard() {
+        navigator.clipboard.writeText(coupon).then(
+            () => {
+                alert('Coupon copied to clipboard!');
+            },
+            (err) => {
+                alert('Could not copy coupon:', err);
+            }
+        );
     }
 
-    useEffect(() => {
-        if (initialMount.current) {
-            initialMount.current = false;
-            return;
-        }
-        console.log("hfeowai")
-        console.log(hasUSDC);
-
-        if (walletAddress) {
-            console.log(walletAddress)
-            console.log("peepee poopoo");
-        }
-    }, [walletAddress, hasUSDC]);
     return(
 
         <div className="flex-row">
@@ -36,14 +49,18 @@ function Hero(){
                     <p className="text-xl md:text-2xl text-white mt-6 mb-12">
                         Come verify you own USDC and win a free coupon code
                     </p>
-                    {walletAddress && <div className="flex gap-9">
-                        <button className="text-white bg-[#63B8EB] font-semibold py-2 md:py-3 px-6 md:px-8 mr-4 rounded-md">
+                    {walletAddress && coupon===null && <div className="flex gap-9">
+                        <button onClick={()=> window.open("https://app.uniswap.org/#/swap")} className="text-white bg-[#63B8EB] font-semibold py-2 md:py-3 px-6 md:px-8 mr-4 rounded-md">
                             Buy USDC
                         </button>
-                        <button className="text-white bg-[#CC9F00] font-semibold py-2 md:py-3 px-6 md:px-8 rounded-md">
+                        <button onClick={()=> checkUSDC(walletAddress)} className="text-white bg-[#CC9F00] font-semibold py-2 md:py-3 px-6 md:px-8 rounded-md">
                             Verify Completion
                         </button>
                     </div>}
+
+                    {walletAddress && coupon && <button onClick={()=>copyCouponToClipboard()} className={"text-white bg-[#00CC83] font-semibold py-2 md:py-3 px-6 md:px-8 rounded-md flex items-center"}>
+                        Congrats! Here’s your code {coupon} <CopyIcon /> </button>}
+
                 </div>
                 <div className="w-full md:w-1/2 flex items-center justify-center">
                     <img

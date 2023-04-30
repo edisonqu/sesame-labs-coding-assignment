@@ -13,3 +13,15 @@
 // }
 //
 // console.log(verifyUSDC("0x30ef31d0931ffe73168e2f4c8c97912b0dc495f62cced5879673226f9dc9b47407ffc2b47190c7ae47a8f9a1c7b874e3436bb0d042bbfa316de76889a292ae5c1b"))
+
+async function authenticateWallet(walletAddress) {
+    try {
+        const response = await axios.post('/api/auth', { walletAddress });
+        const token = response.data.access_token;
+        localStorage.setItem('access_token', token);
+    } catch (error) {
+        console.error('Error while authenticating wallet:', error);
+    }
+}
+
+
