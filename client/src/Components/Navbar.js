@@ -47,11 +47,6 @@ function Navbar(){
     // const selectedData = useSelector(state => state.walletAddress)
     const [displayWallet, setDisplayWallet] = useState("Connect Wallet")
 
-    function shortenString(str) {
-        const start = str.slice(0, 4);
-        const end = str.slice(-6);
-        return `${start}...${end}`;
-    }
 
     const connectWallet = async () => {
         if (window.ethereum) {
@@ -61,37 +56,43 @@ function Navbar(){
                 // const accounts = await window.ethereum.request({
                 //     method: "eth_requestAccounts"
                 // })
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
 
-                // const provider = new ethers.BrowserProvider(window.ethereum);
-                // await window.ethereum.request({ method: 'eth_requestAccounts' });
-                // const signer = await provider.getSigner();
-                // console.log("Account:", await signer.getAddress());
+                await window.ethereum.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: "0x1" }],
+                });
+                const signer = await provider.getSigner();
+                const walletAddress = await signer.getAddress()
+                console.log("Account:", walletAddress);
                 //
-                // const usdcContractAddress = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
-                // const ERC20 = require('../Assets/abi_USDC.json')
+                const usdcContractAddress = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
+                const usdcABI = require('../Assets/abi_USDC.json')
                 // const usdcABI = [ERC20] // USDC contract ABI (Application Binary Interface)
-                // const usdcContract = new ethers.Contract(usdcContractAddress, usdcABI, provider)
-                // const userBalance = await usdcContract.;
+                const usdcContract = new ethers.Contract(usdcContractAddress, usdcABI, provider)
+                const userBalance = await usdcContract.balanceOf(walletAddress);
+                console.log(userBalance.toString())
 
 
                 // const userWallet = accounts[0]
                 //
-                // setWalletAddress(userWallet)
+                setWalletAddress(walletAddress)
 
                 // display truncated wallet on website
-                // const displayWallet = `${userWallet.slice(0, 4)}...${userWallet.slice(-6)}`
-                // setDisplayWallet(displayWallet)
+                const displayWallet = `${walletAddress.slice(0, 4)}...${walletAddress.slice(-6)}`
+                setDisplayWallet(displayWallet)
                 //
-                // const exampleMessage = "i am vitalik"
-                // const encoder = new TextEncoder()
-                // const msgUint8 = encoder.encode(exampleMessage)
-                // const msgHex = Array.prototype.map.call(msgUint8, x => ('00' + x.toString(16)).slice(-2)).join('')
-                //
-                // const sign = await ethereum.request({
-                //     method: 'personal_sign',
-                //     params: [`0x${msgHex}`, userWallet, 'Example password'],
-                // });
-                // console.log(sign)
+                const exampleMessage = "i am vitalik"
+                const encoder = new TextEncoder()
+                const msgUint8 = encoder.encode(exampleMessage)
+                const msgHex = Array.prototype.map.call(msgUint8, x => ('00' + x.toString(16)).slice(-2)).join('')
+
+                const sign = await ethereum.request({
+                    method: 'personal_sign',
+                    params: [`0x${msgHex}`, walletAddress, 'Example password'],
+                });
+                console.log(sign)
                 //
                 // console.log(accounts)
             } catch (error) {
