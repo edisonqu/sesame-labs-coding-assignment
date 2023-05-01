@@ -9,6 +9,12 @@ function Hero(){
     const walletAddress = useStore((state)=> state.userWallet)
     const [coupon, setCoupon] = useState(null);
 
+    const authenticatedAxios = axios.create({
+        baseURL: 'http://127.0.0.1:5000/',
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+        },
+    });
 
     async function checkUSDC(walletAddress){
         const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -19,9 +25,14 @@ function Hero(){
         console.log(userBalance.toString())
 
         if (userBalance > 0) {
-            const response = await axios.post("http://127.0.0.1:5000/api/verify", {"walletAddress": walletAddress})
-            const coupon = response.data.coupon_code
-            setCoupon(coupon)
+            try {
+                const response = await authenticatedAxios.post("http://127.0.0.1:5000/api/verify", {"walletAddress": walletAddress})
+                const coupon = response.data.coupon_code
+                setCoupon(coupon)
+            }
+            catch (e) {
+                alert(e)
+            }
         }
         else{
             alert("You have no USDC!")

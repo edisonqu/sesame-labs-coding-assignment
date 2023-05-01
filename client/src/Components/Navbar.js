@@ -5,12 +5,6 @@ import axios from 'axios'
 import {DoorSVG, LogoSvg} from "../Assets/SVG";
 
 
-const authenticatedAxios = axios.create({
-    baseURL: 'http://127.0.0.1:5000/',
-    headers: {
-        Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-    },
-});
 
 function Navbar(){
     const setWalletAddress = useStore((state)=> state.setWalletAddress)
@@ -18,18 +12,17 @@ function Navbar(){
 
     const disconnectWallet = () => {
         if (window.ethereum) {
-
             window.ethereum.request({ method: 'eth_requestAccounts', params: [] });
 
         }
         setWalletAddress(null);
         setDisplayWallet("Connect Wallet");
+        window.location.reload()
     };
 
     const connectWallet = async () => {
         if (window.ethereum) {
             if (displayWallet !== "Connect Wallet") {
-                console.log("faohihaewoifahweiohaweifohaw")
             } else {
 
             try {
@@ -49,6 +42,9 @@ function Navbar(){
                 // api authorize
                 const response = await axios.post("http://127.0.0.1:5000/api/auth", {"walletAddress": walletAddress})
                 console.log(response)
+
+                const token = response.data.access_token;
+                localStorage.setItem('access_token', token);
 
                 setWalletAddress(walletAddress)
 
