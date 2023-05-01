@@ -44,10 +44,11 @@ function Navbar(){
 
                 const signer = await provider.getSigner();
                 const walletAddress = await signer.getAddress()
-                setWalletAddress(walletAddress)
 
                 // api authorize
                 await authorizeWallet(walletAddress)
+
+                setWalletAddress(walletAddress)
 
                 // display truncated wallet on website
                 const displayWallet = `${walletAddress.slice(0, 4)}...${walletAddress.slice(-6)}`

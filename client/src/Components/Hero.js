@@ -24,7 +24,7 @@ function Hero(){
     async function checkUSDC(walletAddress){
         // initialize ethers js
         const provider = new ethers.providers.Web3Provider(window.ethereum);
-        const contractAddress = process.env.TOKEN_CONTRACT_ADDRESS;
+        const contractAddress = `${process.env.REACT_APP_TOKEN_CONTRACT_ADDRESS}`;
         // find the balance of the user from ethersJs
         const ABI = require('../Assets/abi_USDC.json')
         const tokenContract = new ethers.Contract(contractAddress, ABI, provider)
