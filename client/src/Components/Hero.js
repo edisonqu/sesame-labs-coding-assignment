@@ -5,28 +5,36 @@ import {ethers} from "ethers";
 import axios from "axios";
 import {CopyIcon} from '../Assets/SVG'
 
+
 function Hero(){
+    // global store of the walletAddress to take from the navbar using Zustand
     const walletAddress = useStore((state)=> state.userWallet)
+
+    // set the coupon as null so when it does get validated, the two buttons disappear
     const [coupon, setCoupon] = useState(null);
 
+    // authenticated call using the authentication Bearer token in localStorage
     const authenticatedAxios = axios.create({
-        baseURL: 'http://127.0.0.1:5000/',
+        baseURL: process.env.REACT_APP_BASE_URL,
         headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
         },
     });
 
     async function checkUSDC(walletAddress){
+        // initialize ethers js
         const provider = new ethers.providers.Web3Provider(window.ethereum);
-        const usdcContractAddress = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
-        const usdcABI = require('../Assets/abi_USDC.json')
-        const usdcContract = new ethers.Contract(usdcContractAddress, usdcABI, provider)
-        const userBalance = await usdcContract.balanceOf(walletAddress);
-        console.log(userBalance.toString())
+        const contractAddress = process.env.TOKEN_CONTRACT_ADDRESS;
+        // find the balance of the user from ethersJs
+        const ABI = require('../Assets/abi_USDC.json')
+        const tokenContract = new ethers.Contract(contractAddress, ABI, provider)
+        const userBalance = await tokenContract.balanceOf(walletAddress);
 
+        // do the logic of if they have the balance or not here
         if (userBalance > 0) {
+            // if they do, verify and add to the database and get the coupon code
             try {
-                const response = await authenticatedAxios.post("http://127.0.0.1:5000/api/verify", {"walletAddress": walletAddress})
+                const response = await authenticatedAxios.post(`${process.env.REACT_APP_BASE_URL}/api/verify`, {"walletAddress": walletAddress})
                 const coupon = response.data.coupon_code
                 setCoupon(coupon)
             }
@@ -35,10 +43,12 @@ function Hero(){
             }
         }
         else{
-            alert("You have no USDC!")
+            // if they don't alert them
+            alert("You do not have the token!")
         }
     }
     function copyCouponToClipboard() {
+        // copy to clipboard functionality
         navigator.clipboard.writeText(coupon).then(
             () => {
                 alert('Coupon copied to clipboard!');
@@ -77,7 +87,7 @@ function Hero(){
                     <img
                         className="w-full md:w-12/12 h-auto object-cover rounded-md shadow-lg p-3"
                         src={usdcLogo}
-                        alt="Hero Image"
+                        alt="Coin Image"
                     />
                 </div>
             </div>

@@ -5,20 +5,29 @@ import axios from 'axios'
 import {DoorSVG, LogoSvg} from "../Assets/SVG";
 
 
-
 function Navbar(){
     const setWalletAddress = useStore((state)=> state.setWalletAddress)
     const [displayWallet, setDisplayWallet] = useState("Connect Wallet")
 
-    const disconnectWallet = () => {
-        if (window.ethereum) {
-            window.ethereum.request({ method: 'eth_requestAccounts', params: [] });
+    const authorizeWallet = async (walletAddress) =>{
+        const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/auth`, {"walletAddress": walletAddress})
+        console.log(response.status)
 
-        }
-        setWalletAddress(null);
-        setDisplayWallet("Connect Wallet");
-        window.location.reload()
-    };
+        const token = response.data.access_token;
+        localStorage.setItem('access_token', token);
+    }
+
+    const signWallet = async (walletAddress) => {
+        const randomNonce = Math.floor(Math.random()*10000)
+        const exampleMessage = `This is proof to Sesame that I own the wallet ${walletAddress} with random nonce ${randomNonce}`
+        const encoder = new TextEncoder()
+        const msgUint8 = encoder.encode(exampleMessage)
+        const msgHex = Array.prototype.map.call(msgUint8, x => ('00' + x.toString(16)).slice(-2)).join('')
+        await ethereum.request({
+            method: 'personal_sign',
+            params: [`0x${msgHex}`, walletAddress, 'Example password'], // TODO: change the password
+        });
+    }
 
     const connectWallet = async () => {
         if (window.ethereum) {
@@ -27,9 +36,7 @@ function Navbar(){
 
             try {
                 const provider = new ethers.providers.Web3Provider(window.ethereum);
-                // Wallet Connect
                 await window.ethereum.request({method: 'eth_requestAccounts'});
-
                 await window.ethereum.request({
                     method: 'wallet_switchEthereumChain',
                     params: [{chainId: "0x1"}],
@@ -37,38 +44,25 @@ function Navbar(){
 
                 const signer = await provider.getSigner();
                 const walletAddress = await signer.getAddress()
-                console.log("Account:", walletAddress);
+                setWalletAddress(walletAddress)
 
                 // api authorize
-                const response = await axios.post("http://127.0.0.1:5000/api/auth", {"walletAddress": walletAddress})
-                console.log(response)
-
-                const token = response.data.access_token;
-                localStorage.setItem('access_token', token);
-
-                setWalletAddress(walletAddress)
+                await authorizeWallet(walletAddress)
 
                 // display truncated wallet on website
                 const displayWallet = `${walletAddress.slice(0, 4)}...${walletAddress.slice(-6)}`
                 setDisplayWallet(displayWallet)
 
-                // sign message
-                const exampleMessage = "i am vitalik"
-                const encoder = new TextEncoder()
-                const msgUint8 = encoder.encode(exampleMessage)
-                const msgHex = Array.prototype.map.call(msgUint8, x => ('00' + x.toString(16)).slice(-2)).join('')
+                // sign wallet
+                await signWallet(walletAddress)
 
-                const sign = await ethereum.request({
-                    method: 'personal_sign',
-                    params: [`0x${msgHex}`, walletAddress, 'Example password'],
-                });
-                console.log(sign)
             } catch (error) {
                 if (error.code === 4001) {
-                    console.log("yes")
                     alert("You have rejected the signature!")
                 }
-                // console.log("Error", error)
+                else {
+                    console.log(error)
+                }
             }
         }
         }
@@ -76,6 +70,17 @@ function Navbar(){
             alert("Please install Metamask, there is no Ethereum wallet detected.")
         }
     }
+
+
+    const disconnectWallet = async () => {
+        if (window.ethereum) {
+            await window.ethereum.request({ method: 'eth_requestAccounts', params: [] });
+
+        }
+        setWalletAddress(null);
+        setDisplayWallet("Connect Wallet");
+        await window.location.reload()
+    };
 
     return(
         <header className="shadow-m">
