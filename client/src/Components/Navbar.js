@@ -12,18 +12,17 @@ function Navbar(){
 
     const disconnectWallet = () => {
         if (window.ethereum) {
-
             window.ethereum.request({ method: 'eth_requestAccounts', params: [] });
 
         }
         setWalletAddress(null);
         setDisplayWallet("Connect Wallet");
+        window.location.reload()
     };
 
     const connectWallet = async () => {
         if (window.ethereum) {
             if (displayWallet !== "Connect Wallet") {
-                console.log("faohihaewoifahweiohaweifohaw")
             } else {
 
             try {
